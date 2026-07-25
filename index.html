@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boost Up 英語學習測驗系統 (雙向發音闖關版)</title>
+  <style>
+    :root {
+      --primary-color: #4A90E2;
+      --secondary-color: #5C6AC4;
+      --success-color: #2ECC71;
+      --error-color: #E74C3C;
+      --bg-color: #F4F7F9;
+      --card-bg: #FFFFFF;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--primary-color);
+      margin-bottom: 25px;
+    }
+
+    .control-panel {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+    }
+
+    select, button {
+      padding: 10px 15px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #CCC;
+      outline: none;
+    }
+
+    select {
+      background-color: #FFF;
+      cursor: pointer;
+    }
+
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background-color: var(--secondary-color);
+    }
+
+    .audio-btn {
+      background-color: #F39C12;
+      padding: 6px 14px;
+      font-size: 14px;
+      border-radius: 20px;
+      margin-left: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .audio-btn:hover {
+      background-color: #D68910;
+    }
+
+    .mode-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      background-color: #E0E6ED;
+      color: #555;
+    }
+
+    .tab-btn.active {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    .quiz-card {
+      background: #FAFAFA;
+      border: 1px solid #EAEAEA;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .question-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .question-prompt {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .option-btn {
+      background: #FFF;
+      border: 1px solid #DDD;
+      text-align: left;
+      padding: 12px 15px;
+      color: #333;
+    }
+
+    .option-btn:hover {
+      background: #EBF3FC;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #CCC;
+      border-radius: 6px;
+      box-sizing: border-box;
+      margin-bottom: 15px;
+    }
+
+    .score-board {
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 20px;
+      color: var(--secondary-color);
+    }
+
+    /* 解答複習卡片樣式 */
+    .review-card {
+      background: #FFF;
+      border: 1px solid #DDD;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 25px;
+    }
+
+    .review-item {
+      border-bottom: 1px solid #EEE;
+      padding: 12px 0;
+    }
+
+    .review-item:last-child {
+      border-bottom: none;
+    }
+
+    .review-item.is-correct {
+      border-left: 5px solid var(--success-color);
+      padding-left: 10px;
+    }
+
+    .review-item.is-wrong {
+      border-left: 5px solid var(--error-color);
+      padding-left: 10px;
+    }
+
+    .review-q {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .review-a {
+      font-size: 15px;
+      color: #555;
+    }
+
+    .badge-correct {
+      color: var(--success-color);
+      font-weight: bold;
+    }
+
+    .badge-wrong {
+      color: var(--error-color);
+      font-weight: bold;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Boost Up 學習測驗系統</h1>
+
+  <!-- 選擇冊數與單元 -->
+  <div class="control-panel">
+    <select id="bookSelect">
+      <option value="book1">Book 1</option>
+      <option value="book2">Book 2</option>
+      <option value="book3" selected>Book 3</option>
+      <option value="book4">Book 4</option>
+      <option value="book5">Book 5</option>
+    </select>
+
+    <select id="unitSelect">
+      <option value="unit1">Unit 1</option>
+      <option value="unit2">Unit 2</option>
+      <option value="unit3">Unit 3</option>
+      <option value="unit4">Unit 4</option>
+      <option value="unit5">Unit 5</option>
+      <option value="unit6">Unit 6</option>
+      <option value="unit7">Unit 7</option>
+      <option value="unit8">Unit 8</option>
+    </select>
+
+    <button onclick="loadUnitData()">載入單元</button>
+  </div>
+
+  <!-- 模式切換 -->
+  <div class="mode-tabs">
+    <button class="tab-btn active" id="wordsTab" onclick="switchMode('words')">單字練習</button>
+    <button class="tab-btn" id="sentencesTab" onclick="switchMode('sentences')">句型練習</button>
+  </div>
+
+  <!-- 測驗區域 -->
+  <div id="quizArea" class="quiz-card hidden">
+    <div class="question-header">
+      <div class="question-prompt" id="promptText">題目載入中...</div>
+      <!-- 每一題都可以朗讀英文正確發音 -->
+      <button id="speakPromptBtn" class="audio-btn" onclick="speakCurrentAnswer()">🔊 聽發音</button>
+    </div>
+    
+    <!-- 填空 / 手寫輸入區域 -->
+    <div id="inputArea">
+      <input type="text" id="userInput" placeholder="請在此輸入答案..." autocomplete="off">
+      <button onclick="submitAnswer()">下一題</button>
+    </div>
+
+    <!-- 選擇題選項區域 -->
+    <div id="optionsArea" class="options-grid hidden"></div>
+  </div>
+
+  <!-- 進度板 -->
+  <div id="scoreBoard" class="score-board hidden">
+    目前進度：<span id="currentIndex">0</span> / <span id="totalQuestions">0</span>
+  </div>
+
+  <!-- 完測總結與解答檢討區 -->
+  <div id="reviewArea" class="review-card hidden">
+    <h2 style="text-align: center; color: var(--secondary-color);">🎉 測驗完成！結果統計</h2>
+    <div style="text-align: center; font-size: 22px; font-weight: bold; margin-bottom: 20px;">
+      最終得分：<span id="finalScore" style="color: var(--primary-color);">0</span> 分
+    </div>
+    <hr style="border: none; border-top: 1px solid #DDD; margin: 20px 0;">
+    <h3>📝 答題檢討與標準解答</h3>
+    <div id="reviewList"></div>
+    <div style="text-align: center; margin-top: 25px;">
+      <button onclick="initQuiz()">🔄 再測驗一次</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentBook = 'book3';
+  let currentUnit = 'unit1';
+  let currentMode = 'words';
+  let items = [];
+  let currentIndex = 0;
+  let userAnswers = []; // 紀錄學生的所有回答
+
+  // 🔊 語音朗讀功能 (Text-to-Speech)
+  function speakText(text) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.85; // 稍慢語速適合學生聽清發音
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // 朗讀當前題目的標準英文答案
+  function speakCurrentAnswer() {
+    if (items.length > 0 && currentIndex < items.length) {
+      const targetText = items[currentIndex].answer[0];
+      speakText(targetText);
+    }
+  }
+
+  // 1. 動態載入腳本
+  function loadUnitData() {
+    currentBook = document.getElementById('bookSelect').value;
+    currentUnit = document.getElementById('unitSelect').value;
+    
+    const scriptPath = `data/${currentBook}/${currentUnit}.js`;
+
+    const oldScript = document.getElementById('dynamicUnitScript');
+    if (oldScript) oldScript.remove();
+
+    const script = document.createElement('script');
+    script.id = 'dynamicUnitScript';
+    script.src = scriptPath;
+    
+    script.onload = () => {
+      alert(`已成功載入 ${window.unitData ? window.unitData.unit : '單元資料'}！`);
+      initQuiz();
+    };
+
+    script.onerror = () => {
+      alert(`載入失敗！找不到檔案：${scriptPath}\n請確認檔案是否存在於 data/ 資料夾中。`);
+      document.getElementById('quizArea').classList.add('hidden');
+      document.getElementById('scoreBoard').classList.add('hidden');
+      document.getElementById('reviewArea').classList.add('hidden');
+    };
+
+    document.head.appendChild(script);
+  }
+
+  // 2. 切換模式
+  function switchMode(mode) {
+    currentMode = mode;
+    document.getElementById('wordsTab').classList.toggle('active', mode === 'words');
+    document.getElementById('sentencesTab').classList.toggle('active', mode === 'sentences');
+    if (window.unitData) {
+      initQuiz();
+    }
+  }
+
+  // 3. 初始化測驗
+  function initQuiz() {
+    if (!window.unitData) return;
+
+    items = window.unitData[currentMode] || [];
+    currentIndex = 0;
+    userAnswers = [];
+
+    if (items.length === 0) {
+      alert('該分類目前沒有可用的練習題！');
+      document.getElementById('quizArea').classList.add('hidden');
+      document.getElementById('scoreBoard').classList.add('hidden');
+      document.getElementById('reviewArea').classList.add('hidden');
+      return;
+    }
+
+    document.getElementById('quizArea').classList.remove('hidden');
+    document.getElementById('scoreBoard').classList.remove('hidden');
+    document.getElementById('reviewArea').classList.add('hidden');
+    
+    updateScoreBoard();
+    showQuestion();
+  }
+
+  // 4. 顯示題目
+  function showQuestion() {
+    if (currentIndex >= items.length) {
+      finishQuiz();
+      return;
+    }
+
+    const currentItem = items[currentIndex];
+    document.getElementById('promptText').innerText = `Q${currentIndex + 1}. ${currentItem.prompt}`;
+
+    const inputArea = document.getElementById('inputArea');
+    const optionsArea = document.getElementById('optionsArea');
+    const userInput = document.getElementById('userInput');
+    userInput.value = '';
+
+    if (currentItem.type === 'choice' && currentItem.options) {
+      inputArea.classList.add('hidden');
+      optionsArea.classList.remove('hidden');
+      optionsArea.innerHTML = '';
+
+      currentItem.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerText = opt;
+        btn.onclick = () => submitAnswer(opt);
+        optionsArea.appendChild(btn);
+      });
+    } else {
+      inputArea.classList.remove('hidden');
+      optionsArea.classList.add('hidden');
+    }
+
+    updateScoreBoard();
+  }
+
+  // 5. 提交答案（紀錄並直接進下一題）
+  function submitAnswer(selectedOpt = null) {
+    let userAns = selectedOpt !== null ? selectedOpt : document.getElementById('userInput').value;
+    
+    userAnswers.push(userAns.trim());
+
+    currentIndex++;
+    showQuestion();
+  }
+
+  // 6. 完測結算與解答比對
+  function finishQuiz() {
+    document.getElementById('quizArea').classList.add('hidden');
+    document.getElementById('scoreBoard').classList.add('hidden');
+    document.getElementById('reviewArea').classList.remove('hidden');
+
+    let totalScore = 0;
+    const reviewList = document.getElementById('reviewList');
+    reviewList.innerHTML = '';
+
+    items.forEach((item, idx) => {
+      const uAns = userAnswers[idx] || '';
+      const correctAnsList = item.answer.map(a => a.trim().toLowerCase());
+      const isCorrect = correctAnsList.includes(uAns.toLowerCase());
+
+      if (isCorrect) totalScore += 10;
+
+      const standardAnswer = item.answer[0];
+
+      const div = document.createElement('div');
+      div.className = `review-item ${isCorrect ? 'is-correct' : 'is-wrong'}`;
+      div.innerHTML = `
+        <div class="review-q">
+          Q${idx + 1}. ${item.prompt} 
+          <span class="${isCorrect ? 'badge-correct' : 'badge-wrong'}">
+            ${isCorrect ? '✓ 正確' : '✗ 錯誤'}
+          </span>
+        </div>
+        <div class="review-a">
+          <strong>學生回答：</strong> ${uAns !== '' ? uAns : '(未作答)'}<br>
+          <strong>正確答案：</strong> ${standardAnswer}
+          <button class="audio-btn" style="padding: 2px 8px; font-size: 12px;" onclick="speakText('${standardAnswer.replace(/'/g, "\\'")}')">🔊 聽發音</button>
+        </div>
+      `;
+      reviewList.appendChild(div);
+    });
+
+    document.getElementById('finalScore').innerText = totalScore;
+  }
+
+  // 7. 更新進度板
+  function updateScoreBoard() {
+    document.getElementById('currentIndex').innerText = Math.min(currentIndex + 1, items.length);
+    document.getElementById('totalQuestions').innerText = items.length;
+  }
+
+  window.onload = () => {
+    loadUnitData();
+  };
+</script>
+
+</body>
+</html>
