@@ -457,12 +457,13 @@
     });
 
     document.getElementById('finalScore').innerText = totalScore;
-    if (totalScore === 100) {
-    setTimeout(() => {
-        alert("Nicole老師愛你喔 ❤️❤️\n\n太棒了！你拿到 100 分滿分！特優！🎉");
-    }, 300);
-  }
 
+if (totalScore === 100) {
+    setTimeout(() => {
+        alert("Nicole老師愛你喔 ❤️❤️ 太棒了！你拿到 100 分滿分！");
+    }, 300);
+}
+}
   // 7. 更新進度板
   function updateScoreBoard() {
     document.getElementById('currentIndex').innerText = Math.min(currentIndex + 1, items.length);
