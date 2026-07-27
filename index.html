@@ -458,9 +458,9 @@
 
     document.getElementById('finalScore').innerText = totalScore;
 
-if (totalScore === 100) {
+if (totalScore > 0 && totalScore === items.length * 10) {
     setTimeout(() => {
-        alert("Nicole老師愛你喔 ❤️❤️ 太棒了！你拿到 100 分滿分！");
+        alert("Nicole老師愛你喔 ❤️❤️ 太棒了！你拿到滿分！");
     }, 300);
 }
 }
