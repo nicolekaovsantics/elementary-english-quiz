@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Boost Up 英語學習測驗系統 (雙向發音闖關版)</title>
+  <!-- 防止搜尋引擎抓取，降低版權風險 -->
+  <meta name="robots" content="noindex, nofollow">
+  <title>Booster Up English Quiz - 英語學習測驗系統</title>
   <style>
     :root {
       --primary-color: #4A90E2;
@@ -71,6 +73,11 @@
       background-color: var(--secondary-color);
     }
 
+    button:disabled {
+      background-color: #BDC3C7;
+      cursor: not-allowed;
+    }
+
     .audio-btn {
       background-color: #F39C12;
       padding: 6px 14px;
@@ -127,6 +134,7 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 10px;
+      margin-bottom: 15px;
     }
 
     .option-btn {
@@ -135,10 +143,17 @@
       text-align: left;
       padding: 12px 15px;
       color: #333;
+      transition: background 0.2s, border-color 0.2s;
     }
 
     .option-btn:hover {
       background: #EBF3FC;
+    }
+
+    .option-btn.selected {
+      background: #D6E4FF;
+      border-color: var(--primary-color);
+      font-weight: bold;
     }
 
     input[type="text"] {
@@ -149,6 +164,25 @@
       border-radius: 6px;
       box-sizing: border-box;
       margin-bottom: 15px;
+    }
+
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .nav-buttons button {
+      flex: 1;
+    }
+
+    .btn-prev {
+      background-color: #7F8C8D;
+    }
+
+    .btn-prev:hover {
+      background-color: #95A5A6;
     }
 
     .score-board {
@@ -166,6 +200,24 @@
       padding: 20px;
       border-radius: 8px;
       margin-top: 25px;
+    }
+
+    .sweet-message {
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      color: #E91E63;
+      background-color: #FCE4EC;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0 20px 0;
+      border: 2px dashed #F48FB1;
+      animation: pulse 1.5s infinite alternate;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.02); }
     }
 
     .review-item {
@@ -215,16 +267,16 @@
 <body>
 
 <div class="container">
-  <h1>Boost Up 學習測驗系統</h1>
+  <h1>Booster Up English Quiz 測驗系統</h1>
 
   <!-- 選擇冊數與單元 -->
   <div class="control-panel">
     <select id="bookSelect">
-      <option value="book1">Book 1</option>
-      <option value="book2">Book 2</option>
-      <option value="book3" selected>Book 3</option>
-      <option value="book4">Book 4</option>
-      <option value="book5">Book 5</option>
+      <option value="book1">Level 1</option>
+      <option value="book2">Level 2</option>
+      <option value="book3" selected>Level 3</option>
+      <option value="book4">Level 4</option>
+      <option value="book5">Level 5</option>
     </select>
 
     <select id="unitSelect">
@@ -258,11 +310,16 @@
     <!-- 填空 / 手寫輸入區域 -->
     <div id="inputArea">
       <input type="text" id="userInput" placeholder="請在此輸入答案..." autocomplete="off">
-      <button onclick="submitAnswer()">下一題</button>
     </div>
 
     <!-- 選擇題選項區域 -->
     <div id="optionsArea" class="options-grid hidden"></div>
+
+    <!-- 上一題 / 下一題 控制鈕 -->
+    <div class="nav-buttons">
+      <button id="prevBtn" class="btn-prev" onclick="prevQuestion()">⬅️ 上一題</button>
+      <button id="nextBtn" onclick="nextQuestion()">下一題 ➡️</button>
+    </div>
   </div>
 
   <!-- 進度板 -->
@@ -273,9 +330,13 @@
   <!-- 完測總結與解答檢討區 -->
   <div id="reviewArea" class="review-card hidden">
     <h2 style="text-align: center; color: var(--secondary-color);">🎉 測驗完成！結果統計</h2>
-    <div style="text-align: center; font-size: 22px; font-weight: bold; margin-bottom: 20px;">
-      最終得分：<span id="finalScore" style="color: var(--primary-color);">0</span> 分
+    <div style="text-align: center; font-size: 22px; font-weight: bold;">
+      答對題數：<span id="correctCountText" style="color: var(--primary-color);">0</span> / <span id="totalCountText">0</span> 題
     </div>
+
+    <!-- 肉麻讚美 / 鼓勵顯示區 -->
+    <div id="sweetMessageArea" class="sweet-message hidden"></div>
+
     <hr style="border: none; border-top: 1px solid #DDD; margin: 20px 0;">
     <h3>📝 答題檢討與標準解答</h3>
     <div id="reviewList"></div>
@@ -291,7 +352,30 @@
   let currentMode = 'words';
   let items = [];
   let currentIndex = 0;
-  let userAnswers = []; // 紀錄學生的所有回答
+  let userAnswers = [];
+
+  // ❤️ 全對時的肉麻讚美句子庫（每次隨機抽一句）
+  const sweetMessages = [
+    "💖 Nicole老師超級超級愛你喔！你怎麼會這麼棒啦～",
+    "✨ 哇！全對！Nicole老師的心都被你的優秀融化了啦～💕",
+    "🥰 太厲害了！全對耶！Nicole老師最喜歡這麼認真又聰明的你了！",
+    "💯 答得太完美了！快接受 Nicole 老師的大抱抱跟愛心傳送！愛你喔～❤️",
+    "🌟 你是 Nicole 老師的小天才嗎？全對太強了！老師愛死你了啦～😘",
+    "👑 全對！Nicole老師要給你頒發「無敵可愛聰明獎」！超級愛你～❤️"
+  ];
+
+  // 🤏 差 1~2 題時的溫暖鼓勵語（每次隨機抽一句）
+  const closeEncouragementMessages = [
+    "🤏 太可惜了！只差一點點就全對囉！Nicole 老師相信你下次一定可以！加油～❤️",
+    "🌟 差一點點就滿分全對了！你已經超級優秀了，Nicole 老師為你加油喔！💪",
+    "🥰 就差那麼一兩題！ Nicole 老師看好你，再試一次一定能拿全對！"
+  ];
+
+  // 💪 答錯 3 題以上的鼓勵語
+  const generalEncouragementMessages = [
+    "👍 表現得很棒喔！複習一下錯題， Nicole 老師相信你下次一定會進步很多！加油～💪",
+    "😊 沒關係，學習就是慢慢累積！Nicole 老師永遠在後面為你加油打氣喔！❤️"
+  ];
 
   // 🔊 語音朗讀功能 (Text-to-Speech)
   function speakText(text) {
@@ -299,7 +383,7 @@
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
-    utterance.rate = 0.85; // 稍慢語速適合學生聽清發音
+    utterance.rate = 0.85;
     window.speechSynthesis.speak(utterance);
   }
 
@@ -356,7 +440,7 @@
 
     items = window.unitData[currentMode] || [];
     currentIndex = 0;
-    userAnswers = [];
+    userAnswers = new Array(items.length).fill(''); // 初始化為空字串陣列
 
     if (items.length === 0) {
       alert('該分類目前沒有可用的練習題！');
@@ -374,7 +458,7 @@
     showQuestion();
   }
 
-  // 4. 顯示題目
+  // 4. 顯示題目（包含還原先前輸入的答案）
   function showQuestion() {
     if (currentIndex >= items.length) {
       finishQuiz();
@@ -387,8 +471,20 @@
     const inputArea = document.getElementById('inputArea');
     const optionsArea = document.getElementById('optionsArea');
     const userInput = document.getElementById('userInput');
-    userInput.value = '';
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
 
+    // 設定上一題按鈕狀態
+    prevBtn.disabled = (currentIndex === 0);
+
+    // 設定下一題按鈕文字（最後一題顯示送出）
+    if (currentIndex === items.length - 1) {
+      nextBtn.innerText = '完成並送出 🏁';
+    } else {
+      nextBtn.innerText = '下一題 ➡️';
+    }
+
+    // 填空題 vs 選擇題處理
     if (currentItem.type === 'choice' && currentItem.options) {
       inputArea.classList.add('hidden');
       optionsArea.classList.remove('hidden');
@@ -398,34 +494,62 @@
         const btn = document.createElement('button');
         btn.className = 'option-btn';
         btn.innerText = opt;
-        btn.onclick = () => submitAnswer(opt);
+        
+        // 若先前已選過此選項，加亮標示
+        if (userAnswers[currentIndex] === opt) {
+          btn.classList.add('selected');
+        }
+
+        btn.onclick = () => {
+          userAnswers[currentIndex] = opt;
+          // 清除其他選項樣式並高亮目前選取的
+          document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+        };
         optionsArea.appendChild(btn);
       });
     } else {
       inputArea.classList.remove('hidden');
       optionsArea.classList.add('hidden');
+      // 還原先前的填空答案
+      userInput.value = userAnswers[currentIndex] || '';
     }
 
     updateScoreBoard();
   }
 
-  // 5. 提交答案（紀錄並直接進下一題）
-  function submitAnswer(selectedOpt = null) {
-    let userAns = selectedOpt !== null ? selectedOpt : document.getElementById('userInput').value;
-    
-    userAnswers.push(userAns.trim());
+  // 保存當前題目的答案
+  function saveCurrentAnswer() {
+    const currentItem = items[currentIndex];
+    if (currentItem.type !== 'choice') {
+      const userInput = document.getElementById('userInput');
+      userAnswers[currentIndex] = userInput.value.trim();
+    }
+  }
 
+  // 下一題
+  function nextQuestion() {
+    saveCurrentAnswer();
     currentIndex++;
     showQuestion();
   }
 
-  // 6. 完測結算與解答比對
+  // 上一題
+  function prevQuestion() {
+    if (currentIndex > 0) {
+      saveCurrentAnswer();
+      currentIndex--;
+      showQuestion();
+    }
+  }
+
+  // 6. 完測結算與解答比對（含全對肉麻讚美與差1-2題鼓勵語）
   function finishQuiz() {
     document.getElementById('quizArea').classList.add('hidden');
     document.getElementById('scoreBoard').classList.add('hidden');
     document.getElementById('reviewArea').classList.remove('hidden');
 
-    let totalScore = 0;
+    let correctCount = 0;
     const reviewList = document.getElementById('reviewList');
     reviewList.innerHTML = '';
 
@@ -434,7 +558,7 @@
       const correctAnsList = item.answer.map(a => a.trim().toLowerCase());
       const isCorrect = correctAnsList.includes(uAns.toLowerCase());
 
-      if (isCorrect) totalScore += 10;
+      if (isCorrect) correctCount++;
 
       const standardAnswer = item.answer[0];
 
@@ -456,14 +580,32 @@
       reviewList.appendChild(div);
     });
 
-    document.getElementById('finalScore').innerText = totalScore;
+    // 顯示答對題數與總題數
+    const totalQuestions = items.length;
+    const wrongCount = totalQuestions - correctCount;
 
-if (totalScore > 0 && totalScore === items.length * 10) {
-    setTimeout(() => {
-        alert("Nicole老師愛你喔 ❤️❤️ 太棒了！你拿到滿分！");
-    }, 300);
-}
-}
+    document.getElementById('correctCountText').innerText = correctCount;
+    document.getElementById('totalCountText').innerText = totalQuestions;
+
+    // 肉麻訊息 / 鼓勵語顯示邏輯
+    const sweetArea = document.getElementById('sweetMessageArea');
+    sweetArea.classList.remove('hidden');
+
+    if (correctCount === totalQuestions) {
+      // 💯 1. 全對時：隨機抽肉麻讚美語
+      const randomIdx = Math.floor(Math.random() * sweetMessages.length);
+      sweetArea.innerText = sweetMessages[randomIdx];
+    } else if (wrongCount === 1 || wrongCount === 2) {
+      // 🤏 2. 差 1 或 2 題時：給予溫暖鼓勵語
+      const randomIdx = Math.floor(Math.random() * closeEncouragementMessages.length);
+      sweetArea.innerText = closeEncouragementMessages[randomIdx];
+    } else {
+      // 💪 3. 差 3 題以上時：給予一般加油語
+      const randomIdx = Math.floor(Math.random() * generalEncouragementMessages.length);
+      sweetArea.innerText = generalEncouragementMessages[randomIdx];
+    }
+  }
+
   // 7. 更新進度板
   function updateScoreBoard() {
     document.getElementById('currentIndex').innerText = Math.min(currentIndex + 1, items.length);
