@@ -554,8 +554,19 @@
     reviewList.innerHTML = '';
 
     items.forEach((item, idx) => {
-      const uAns = (userAnswers[idx] || '').trim();
-const isCorrect = item.answer.some(a => String(a).trim().toLowerCase() === uAns.toLowerCase());
+     const uAns = (userAnswers[idx] || '').trim();
+const isCorrect = item.answer.some(a => {
+  const target = String(a).trim();
+  // 檢查標準答案本身是否含有大寫字母（如人名/專有名詞/句首）
+  const hasCapital = /[A-Z]/.test(target);
+  if (hasCapital) { 
+    // 答案含大寫：嚴格比對（必須完全一致，包含大小寫）
+    return target === uAns;
+  } else {
+    // 答案純小寫：不限大小寫（轉小寫比對）
+    return target.toLowerCase() === uAns.toLowerCase();
+  }
+});
 
 
       if (isCorrect) correctCount++;
