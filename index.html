@@ -554,9 +554,9 @@
     reviewList.innerHTML = '';
 
     items.forEach((item, idx) => {
-      const uAns = userAnswers[idx] || '';
-      const correctAnsList = item.answer.map(a => a.trim().toLowerCase());
-      const isCorrect = correctAnsList.includes(uAns.toLowerCase());
+      const uAns = (userAnswers[idx] || '').trim();
+const isCorrect = item.answer.some(a => String(a).trim().toLowerCase() === uAns.toLowerCase());
+
 
       if (isCorrect) correctCount++;
 
